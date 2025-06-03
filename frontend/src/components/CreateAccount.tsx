@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ArrowLeft, Plus, AlertCircle, CheckCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Layout from "./Layout"
+import { useAuth } from "../context/AuthContext"
 
 const CreateAccount: React.FC = () => {
   const navigate = useNavigate()
@@ -16,6 +17,8 @@ const CreateAccount: React.FC = () => {
     currency: "CRC",
     initialBalance: "",
   })
+
+  const { user } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,6 +43,7 @@ const CreateAccount: React.FC = () => {
           number: ibanData.iban,
           currency: formData.currency,
           balance: Number.parseFloat(formData.initialBalance) || 0,
+          user_id: user?.id,
         }),
       })
 
