@@ -1,31 +1,73 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Login from "./pages/Login";
-import Home from "./pages/Home";
 
-// Componente de ruta protegida
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const isAuthenticated = localStorage.getItem("user"); // O "token"
-  return isAuthenticated ? children : <Navigate to="/" replace />;
-};
 
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Login />} />
+import type React from "react"
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
+import Login from "./components/Login"
+import Dashboard from "./components/Dashboard"
+import TransferForm from "./components/TransferForm"
+import CreateAccount from "./components/CreateAccount"
+import Transactions from "./components/Transactions"
+import Accounts from "./components/Accounts"
+import { AuthProvider, useAuth } from "./context/AuthContext"
 
-        {/* Ruta protegida */}
-        <Route
-          path="/app"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-  );
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth()
+  return user ? <>{children}</> : <Navigate to="/login" replace />
 }
 
-export default App;
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transfer"
+              element={
+                <ProtectedRoute>
+                  <TransferForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-account"
+              element={
+                <ProtectedRoute>
+                  <CreateAccount />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/transactions"
+              element={
+                <ProtectedRoute>
+                  <Transactions />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/accounts"
+              element={
+                <ProtectedRoute>
+                  <Accounts />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </div>
+      </Router>
+    </AuthProvider>
+  )
+}
+
+export default App

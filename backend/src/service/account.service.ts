@@ -29,6 +29,10 @@ export const createAccount = async (
 };
 
 export const getAccounts = async (userName: string) => {
+  if (!userName) {
+    throw new Error("userName es requerido");
+  }
+
   if (userName.toLowerCase() === "admin") {
     return prisma.accounts.findMany({
       include: {
@@ -36,7 +40,6 @@ export const getAccounts = async (userName: string) => {
       },
     });
   }
-
   const user = await prisma.users.findUnique({
     where: { name: userName },
     include: { user_accounts: true },
