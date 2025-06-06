@@ -1,8 +1,8 @@
-import { prisma } from "../utils/prisma";
+import { sinpe } from "../prisma/sinpeClient";
 import bcrypt from "bcryptjs";
 
 export const loginUser = async (name: string, password: string) => {
-  const user = await prisma.users.findUnique({ where: { name } });
+  const user = await sinpe.users.findUnique({ where: { name } });
 
   if (!user) {
     throw new Error("Nombre o contraseña incorrectos");

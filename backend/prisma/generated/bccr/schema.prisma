@@ -1,0 +1,15 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/bccr"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_BCCR")
+}
+
+model sinpe_subscriptions {
+  sinpe_number      String @unique(map: "sinpe_subscription_number_unique") @db.VarChar(20)
+  sinpe_bank_code   String @db.VarChar(100)
+  sinpe_client_name String @unique(map: "sinpe_subscription_client_name_unique") @db.VarChar(100)
+}

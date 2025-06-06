@@ -28,35 +28,40 @@ export const receiveTransfer = async (req: Request, res: Response) => {
     !sender ||
     !receiver ||
     !amount ||
-    !hmac_md5
+    !hmac_md5 ||
+    (!sender.account_number && !sender.phone)
   ) {
-    return res.status(400).json({ error: "Faltan campos requeridos." });
+    return res.status(400).json({ error: "Faltan campos requeridos o identificador de remitente." });
   }
 
-  // Registrar la transacción en logs
+  // Log transacción entrante
   logTransaction(transaction);
 
-  // Validar HMAC
+  // Verificar validez del HMAC
   const isValid = verifyHmac(transaction, hmac_md5);
   if (!isValid) {
-    return res.status(401).json({ error: "HMAC inválido." });
+    return res.status(401).json({ error: "HMAC inválido. Transacción rechazada." });
   }
 
   try {
-    // Verificamos si la cuenta emisora existe
-    const fromAccount = await prisma.accounts.findUnique({
-      where: { number: sender.account_number },
-    });
+    // ¿Existe la cuenta del remitente? (solo si es transferencia interna)
+    const fromAccount = sender.account_number
+      ? await prisma.accounts.findUnique({
+          where: { number: sender.account_number },
+        })
+      : null;
 
     if (fromAccount) {
-      await processTransfer(transaction); // Transferencia entre dos cuentas locales
+      // Transferencia interna
+      await processTransfer(transaction);
     } else {
-      await createExternalCredit(transaction); // Solo acreditar
+      // Solo acreditar (emisor externo o SINPE Móvil entrante)
+      await createExternalCredit(transaction);
     }
 
     return res.status(200).json({ success: true });
   } catch (error: any) {
-    console.error("❌ Error:", error.message);
+    console.error("❌ Error procesando transferencia:", error.message);
     return res.status(500).json({ error: error.message });
   }
 };
