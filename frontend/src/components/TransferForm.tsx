@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { ArrowLeft, Send, AlertCircle, CheckCircle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Layout from "./Layout"
-
+import { useAuth } from "../context/AuthContext"
 interface Account {
   id: number
   number: string
@@ -19,7 +19,7 @@ const TransferForm: React.FC = () => {
   const [message, setMessage] = useState("")
   const [isError, setIsError] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
-
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     fromAccountId: "",
     toAccountNumber: "",
@@ -32,17 +32,30 @@ const TransferForm: React.FC = () => {
     fetchAccounts()
   }, [])
 
-  const fetchAccounts = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/accounts`)
-      if (response.ok) {
-        const data = await response.json()
-        setAccounts(data)
+const fetchAccounts = async () => {
+  try {
+    if (!user) throw new Error("Usuario no autenticado");
+
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/accounts?user=${encodeURIComponent(user.name)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       }
-    } catch (error) {
-      console.error("Error fetching accounts:", error)
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      setAccounts(data);
+    } else {
+      console.error("Error al obtener cuentas: respuesta no OK");
     }
+  } catch (error) {
+    console.error("Error fetching accounts:", error);
   }
+};
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,6 +91,17 @@ const TransferForm: React.FC = () => {
       }
 
       const hmacData = await hmacResponse.json()
+
+      const finalPayload = {
+  fromAccountId: Number.parseInt(formData.fromAccountId),
+  toAccountNumber: formData.toAccountNumber,
+  amount: Number.parseFloat(formData.amount),
+  currency: formData.currency,
+  description: formData.description,
+  hmac: hmacData.hmac,
+};
+
+console.log("JSON enviado al backend:", JSON.stringify(finalPayload, null, 2));
 
       // Create the transaction
       const transactionResponse = await fetch(`${import.meta.env.VITE_API_URL}/transactions`, {

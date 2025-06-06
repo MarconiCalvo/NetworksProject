@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { ArrowLeft, Search, ArrowUpRight, ArrowDownLeft, Calendar } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import Layout from "./Layout"
+import { useAuth } from "../context/AuthContext"// Ajusta el path si es necesario
 
 interface Transaction {
   id: number
@@ -36,52 +37,72 @@ const Transactions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedAccount, setSelectedAccount] = useState("")
   const [statusFilter, setStatusFilter] = useState("")
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchData()
   }, [])
 
-  const fetchData = async () => {
-    try {
-      // Fetch accounts first
-      const accountsResponse = await fetch(`${import.meta.env.VITE_API_URL}/accounts`)
-      if (accountsResponse.ok) {
-        const accountsData = await accountsResponse.json()
-        setAccounts(accountsData)
+const fetchData = async () => {
+  try {
+    if (!user) throw new Error("Usuario no autenticado");
 
-        // Fetch transactions for each account
-        const allTransactions: Transaction[] = []
-        for (const account of accountsData) {
-          try {
-            const transactionsResponse = await fetch(
-              `${import.meta.env.VITE_API_URL}/accounts/${account.number}/details`,
-            )
-            if (transactionsResponse.ok) {
-              const transactionData = await transactionsResponse.json()
-              if (transactionData.transactions) {
-                allTransactions.push(...transactionData.transactions)
-              }
-            }
-          } catch (error) {
-            console.error(`Error fetching transactions for account ${account.number}:`, error)
-          }
-        }
-
-        // Remove duplicates and sort by date
-        const uniqueTransactions = allTransactions.filter(
-          (transaction, index, self) => index === self.findIndex((t) => t.id === transaction.id),
-        )
-
-        setTransactions(
-          uniqueTransactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-        )
+    const accountsResponse = await fetch(
+      `${import.meta.env.VITE_API_URL}/accounts?user=${encodeURIComponent(user.name)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       }
-    } catch (error) {
-      console.error("Error fetching data:", error)
-    } finally {
-      setLoading(false)
+    );
+
+    if (accountsResponse.ok) {
+      const accountsData = await accountsResponse.json();
+      setAccounts(accountsData);
+
+      const allTransactions: Transaction[] = [];
+
+      for (const account of accountsData) {
+        try {
+          const transactionsResponse = await fetch(
+            `${import.meta.env.VITE_API_URL}/accounts/${account.number}/details`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          if (transactionsResponse.ok) {
+            const transactionData = await transactionsResponse.json();
+            if (transactionData.transactions) {
+              allTransactions.push(...transactionData.transactions);
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching transactions for account ${account.number}:`, error);
+        }
+      }
+
+      const uniqueTransactions = allTransactions.filter(
+        (transaction, index, self) => index === self.findIndex((t) => t.id === transaction.id)
+      );
+
+      setTransactions(
+        uniqueTransactions.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+      );
+    } else {
+      console.error("Error al obtener cuentas: respuesta no OK");
     }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+  } finally {
+    setLoading(false);
   }
+};
+
 
   const formatAmount = (amount: string, currency: string) => {
     return new Intl.NumberFormat("es-CR", {
