@@ -91,6 +91,21 @@ const Dashboard: React.FC = () => {
             color: "bg-orange-500",
             path: "/accounts",
         },
+        {
+            title: "Sinpe Móvil",
+            description: "Enviar dinero por SINPE",
+            icon: Send,
+            color: "bg-orange-500",
+            path: "/accounts",
+        },
+
+         {
+            title: "Asociar Teléfono",
+            description: "Asociar cuenta a tu número de teléfono",
+            icon: Send,
+            color: "bg-orange-500",
+            path: "/phone-link",
+        },
     ]
 
     if (!user) {
