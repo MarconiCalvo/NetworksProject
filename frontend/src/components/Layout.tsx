@@ -20,6 +20,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Nueva Cuenta", href: "/create-account", icon: Plus },
     { name: "Transacciones", href: "/transactions", icon: History },
     { name: "Mis Cuentas", href: "/accounts", icon: CreditCard },
+    { name: "SinpeMovil", href: "/sinpeForm", icon: CreditCard },
   ]
 
   const handleLogout = () => {
@@ -27,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate("/login")
   }
 
-  // ⚠️ Nueva verificación para evitar error si user no está cargado aún
+  
   if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-gray-600">

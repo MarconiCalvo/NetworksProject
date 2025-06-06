@@ -8,6 +8,7 @@ import TransferForm from "./components/TransferForm"
 import CreateAccount from "./components/CreateAccount"
 import Transactions from "./components/Transactions"
 import Accounts from "./components/Accounts"
+import SinpeForm from "./components/SinpeForm"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -59,6 +60,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <Accounts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sinpeForm"
+              element={
+                <ProtectedRoute>
+                  <SinpeForm />
                 </ProtectedRoute>
               }
             />
