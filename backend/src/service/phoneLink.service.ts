@@ -73,7 +73,7 @@ export const linkPhoneToAccount = async (
     const bccrResult = await bccr.sinpe_subscriptions.create({
       data: {
         sinpe_number: phone,
-        sinpe_bank_code: "152",
+        sinpe_bank_code: "119",
         sinpe_client_name: user_name,
       },
     });

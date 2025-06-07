@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { prisma } from "../utils/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 import fetch from "node-fetch";
+import https from "https";
 import rawBanks from "../config/bank.json";
 import {
   generateHmacForAccountTransfer,
@@ -9,6 +10,11 @@ import {
 } from "../utils/generateHmac";
 
 const LOCAL_BANK_CODE = "119";
+
+// Configuración para aceptar certificados autofirmados en desarrollo
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false
+});
 
 interface Sender {
   account_number?: string;
@@ -254,6 +260,7 @@ const sendToExternalBank = async (
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(transaction),
+    agent: httpsAgent,
   });
 
   if (!response.ok) {

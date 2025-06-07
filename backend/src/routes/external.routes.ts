@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { receiveTransfer } from "../controller/external.controller";
-import { handleSinpeTransfer } from "../controller/sinpe.controller";
+import { receiveSinpeMovilTransfer } from "../controller/sinpe.controller";
 
 const router = Router();
 
@@ -10,7 +10,7 @@ router.post("/sinpe-transfer", (req, res, next) => {
 });
 
 router.post("/sinpe-movil-transfer", (req, res, next) => {
-  Promise.resolve(handleSinpeTransfer(req, res)).catch(next);
+  Promise.resolve(receiveSinpeMovilTransfer(req, res)).catch(next);
 });
 
 export default router;

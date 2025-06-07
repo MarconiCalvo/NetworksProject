@@ -3,6 +3,7 @@ import {
   checkUserSinpeLink,
   handleSinpeTransfer,
   validatePhone,
+  receiveSinpeMovilTransfer,
 } from "../controller/sinpe.controller";
 
 const router = Router();
@@ -11,6 +12,14 @@ router.post(
   "/sinpe-movil",
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(handleSinpeTransfer(req, res)).catch(next);
+  }
+);
+
+// Nueva ruta para recibir transferencias SINPE Móvil de otros bancos
+router.post(
+  "/sinpe-movil-transfer",
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(receiveSinpeMovilTransfer(req, res)).catch(next);
   }
 );
 

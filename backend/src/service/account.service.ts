@@ -1,4 +1,4 @@
-import {sinpe} from "../prisma/sinpeClient";
+import { sinpe } from "../prisma/sinpeClient";
 import { generateIbanNumber } from "../utils/generateIBAN";
 
 export const createAccount = async (
@@ -30,11 +30,17 @@ export const createAccount = async (
 
 export const getAccounts = async (userName: string) => {
   if (userName.toLowerCase() === "admin") {
-    return sinpe.accounts.findMany({
+    const accounts = await sinpe.accounts.findMany({
       include: {
         user_accounts: { include: { users: true } },
       },
     });
+
+    // Convertir balance de Decimal a número
+    return accounts.map(account => ({
+      ...account,
+      balance: Number(account.balance)
+    }));
   }
 
   const user = await sinpe.users.findUnique({
@@ -46,9 +52,15 @@ export const getAccounts = async (userName: string) => {
 
   const accountIds = user.user_accounts.map((ua: { account_id: number }) => ua.account_id);
 
-  return sinpe.accounts.findMany({
+  const accounts = await sinpe.accounts.findMany({
     where: { id: { in: accountIds } },
   });
+
+  // Convertir balance de Decimal a número
+  return accounts.map(account => ({
+    ...account,
+    balance: Number(account.balance)
+  }));
 };
 
 export const getAccountByNumber = async (number: string) => {
@@ -59,7 +71,7 @@ export const getAccountByNumber = async (number: string) => {
 };
 
 export const getAllAccounts = async () => {
-  return sinpe.accounts.findMany({
+  const accounts = await sinpe.accounts.findMany({
     select: {
       id: true,
       number: true,
@@ -67,6 +79,12 @@ export const getAllAccounts = async () => {
       balance: true,
     },
   });
+
+  // Convertir balance de Decimal a número
+  return accounts.map(account => ({
+    ...account,
+    balance: Number(account.balance)
+  }));
 };
 
 export const getAccountOwnerName = async (
@@ -102,18 +120,18 @@ export const getAccountWithTransfers = async (accountNumber: string) => {
   if (!account) return null;
 
   const debits = account.transfers_transfers_from_account_idToaccounts.map(
-    (t: { amount: number; currency: string; created_at: Date | null }) => ({
+    (t: { amount: any; currency: string; created_at: Date | null }) => ({
       type: "debit",
-      amount: t.amount,
+      amount: Number(t.amount), // Convertir Decimal a número
       currency: t.currency,
       date: t.created_at,
     })
   );
 
   const credits = account.transfers_transfers_to_account_idToaccounts.map(
-    (t: { amount: number; currency: string; created_at: Date | null }) => ({
+    (t: { amount: any; currency: string; created_at: Date | null }) => ({
       type: "credit",
-      amount: t.amount,
+      amount: Number(t.amount), // Convertir Decimal a número
       currency: t.currency,
       date: t.created_at,
     })
