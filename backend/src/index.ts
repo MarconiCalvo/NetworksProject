@@ -12,6 +12,12 @@ import externalRoutes from "./routes/external.routes";
 import messageRoutes from "./routes/messages.routes";
 import phoneLinkRoutes from "./routes/phoneLink.routes";
 import sinpeRoutes from "./routes/sinpe.routes";
+// ...existing code...
+// ...existing code...
+import pullFundsRoutes from "./routes/pullFunds.routes";
+//import pullFundsReceiverRoutes from "./routes/pullFundsReceiver.routes"; // <-- NUEVA IMPORTACIÓN
+import pullFundsReceiverRoutes from "./routes/pullFundsReceiver.routes";
+// ...existing code...
 
 const app = express();
 const HTTP_PORT = 3001;
@@ -35,6 +41,7 @@ app.use(cors({
 app.use(bodyParser.json());
 
 // Rutas existentes sin cambios
+
 app.use("/api", userRoutes);
 app.use("/api", authRoutes);
 app.use("/api", accountRoutes);
@@ -43,6 +50,11 @@ app.use("/api", externalRoutes);
 app.use("/api", messageRoutes);
 app.use("/api", phoneLinkRoutes);
 app.use("/api", sinpeRoutes);
+app.use("/api",pullFundsRoutes);
+app.use("/api", pullFundsReceiverRoutes);
+//app.use(pullFundsReceiverRoutes); // <-- NUEVA RUTA
+
+// ...existing code...
 
 // Endpoint de salud para verificar conectividad entre bancos
 app.get("/api/health", (req, res) => {

@@ -11,6 +11,7 @@ import Accounts from "./components/Accounts"
 import SinpeForm from "./components/SinpeForm"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import PhoneLinkForm from "./components/PhoneLinkForm"
+import PullFundsForm from "./components/PullFundsForm";
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,6 +82,15 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/pull-funds"
+              element={
+                <ProtectedRoute>
+                  <PullFundsForm />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
