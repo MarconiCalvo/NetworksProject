@@ -2,7 +2,7 @@
 import type React from "react"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { CreditCard, Send, Plus, History, DollarSign, TrendingUp, Eye, EyeOff } from "lucide-react"
+import { CreditCard, Send, Plus, History, DollarSign, TrendingUp, Eye, EyeOff, PhoneCall } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 import Layout from "./Layout"
 
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
          {
             title: "Asociar Teléfono",
             description: "Asociar cuenta a tu número de teléfono",
-            icon: Send,
+            icon: PhoneCall,
             color: "bg-orange-500",
             path: "/phone-link",
         },

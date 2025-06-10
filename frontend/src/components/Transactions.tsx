@@ -1,4 +1,3 @@
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { ArrowLeft, Search, ArrowUpRight, ArrowDownLeft, Calendar } from "lucide-react"
@@ -76,8 +75,25 @@ const fetchData = async () => {
           if (transactionsResponse.ok) {
             const transactionData = await transactionsResponse.json();
             if (transactionData.transactions) {
-              allTransactions.push(...transactionData.transactions);
-            }
+  const formatted = transactionData.transactions.map((t: any, i: number) => {
+    const isCredit = t.type === "credit";
+
+    return {
+      id: Date.now() + i, // generar ID temporal (puedes usar uuid si prefieres)
+      from_account_id: isCredit ? 0 : transactionData.id,
+      to_account_id: isCredit ? transactionData.id : 0,
+      amount: String(t.amount),
+      currency: t.currency,
+      status: "completed", // Asume que vienen completadas
+      created_at: t.date,
+      fromAccount: isCredit ? { number: "Externo" } : { number: transactionData.number },
+      toAccount: isCredit ? { number: transactionData.number } : { number: "Externo" },
+    };
+  });
+
+  allTransactions.push(...formatted);
+}
+
           }
         } catch (error) {
           console.error(`Error fetching transactions for account ${account.number}:`, error);

@@ -1,7 +1,7 @@
 
 import React from "react"
 import { useNavigate, useLocation } from "react-router-dom"
-import { Home, Send, Plus, History, CreditCard, LogOut, Menu, X } from "lucide-react"
+import { Home, Send, Plus, History, CreditCard, LogOut, Menu, X, PhoneCall } from "lucide-react"
 import { useAuth } from "../context/AuthContext"
 
 interface LayoutProps {
@@ -21,7 +21,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Transacciones", href: "/transactions", icon: History },
     { name: "Mis Cuentas", href: "/accounts", icon: CreditCard },
     { name: "SinpeMovil", href: "/sinpeForm", icon: Send },
-    { name: "PhoneLinkForm", href: "/phone-link", icon: Send },
+    { name: "PhoneLinkForm", href: "/phone-link", icon: PhoneCall },
   ]
 
   const handleLogout = () => {
