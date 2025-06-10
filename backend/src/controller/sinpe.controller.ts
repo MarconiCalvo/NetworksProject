@@ -24,10 +24,7 @@ export const checkUserSinpeLink = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error("❌ Error en verificación SINPE:", err);
-    return res.status(500).json({
-      status: "NACK",
-      message: "Error del servidor",
-    });
+    return res.status(500).json({ error: "Error del servidor" });
   }
 };
 
@@ -44,13 +41,13 @@ export const handleSinpeTransfer = async (req: Request, res: Response) => {
       hmac_md5,
     } = req.body;
 
+    // Validar campos obligatorios
     if (!sender?.phone_number || !receiver?.phone_number || !amount?.value || !hmac_md5) {
-      return res.status(400).json({
-        status: "NACK",
-        message: "Faltan datos en la solicitud.",
-      });
+      return res.status(400).json({ error: "Faltan datos en la solicitud." });
     }
 
+
+    // Validar HMAC
     const isValid = verifyHmac(
       {
         version,
@@ -65,10 +62,7 @@ export const handleSinpeTransfer = async (req: Request, res: Response) => {
     );
 
     if (!isValid) {
-      return res.status(403).json({
-        status: "NACK",
-        message: "HMAC inválido.",
-      });
+      return res.status(403).json({ error: "HMAC inválido." });
     }
 
     const transfer = await sendSinpeTransfer(
@@ -79,17 +73,12 @@ export const handleSinpeTransfer = async (req: Request, res: Response) => {
       description
     );
 
-    return res.status(201).json({
-      status: "ACK",
-      message: "Transferencia realizada correctamente.",
-      transaction_id,
-      transfer,
-    });
+
+    res.status(201).json({ message: "Transferencia realizada.", transfer });
   } catch (error: any) {
-    return res.status(500).json({
-      status: "NACK",
-      message: `Error al procesar la transferencia: ${error.message}`,
-    });
+    res
+      .status(500)
+      .json({ error: error.message || "Error al procesar transferencia." });
   }
 };
 
@@ -108,13 +97,12 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
 
     console.log("📱 Recibiendo transferencia SINPE Móvil externa:", req.body);
 
+    // Validar campos obligatorios para SINPE Móvil
     if (!sender?.phone_number || !receiver?.phone_number || !amount?.value || !hmac_md5) {
-      return res.status(400).json({
-        status: "NACK",
-        message: "Faltan datos en la solicitud SINPE Móvil.",
-      });
+      return res.status(400).json({ error: "Faltan datos en la solicitud SINPE Móvil." });
     }
 
+    // Crear payload para validación HMAC usando phone_number del sender
     const hmacPayload = {
       version,
       timestamp,
@@ -126,7 +114,7 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
       },
       receiver: {
         phone: receiver.phone_number,
-        account_number: "temp",
+        account_number: "temp", // Placeholder para cumplir el tipo
         bank_code: "119",
         name: receiver.name || "Usuario local"
       },
@@ -134,6 +122,7 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
       description
     };
 
+    // Validar HMAC para transferencias SINPE Móvil
     const { generateHmacForPhoneTransfer } = await import("../utils/generateHmac");
     const expectedHmac = generateHmacForPhoneTransfer(
       sender.phone_number,
@@ -144,12 +133,14 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
 
     if (expectedHmac !== hmac_md5) {
       console.log("❌ HMAC inválido para transferencia SINPE Móvil entrante");
-      return res.status(403).json({
-        status: "NACK",
-        message: "HMAC inválido.",
-      });
+      console.log("Expected:", expectedHmac);
+      console.log("Received:", hmac_md5);
+      return res.status(403).json({ error: "HMAC inválido." });
     }
 
+    console.log("✅ HMAC válido para transferencia SINPE Móvil");
+
+    // Procesar la transferencia entrante
     const result = await processSinpeMovilIncoming(
       sender.phone_number,
       receiver.phone_number,
@@ -158,18 +149,20 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
       description
     );
 
-    return res.status(200).json({
-      status: "ACK",
-      message: "Servicio SINPE Móvil registrado correctamente en ambas bases de datos",
+    console.log("✅ Transferencia SINPE Móvil entrante procesada exitosamente");
+
+    // Enviar respuesta de confirmación
+    res.status(200).json({
+      success: true,
+      message: "Transferencia SINPE Móvil recibida y procesada correctamente.",
       transaction_id,
       result
     });
 
   } catch (error: any) {
     console.error("❌ Error procesando transferencia SINPE Móvil entrante:", error.message);
-    return res.status(500).json({
-      status: "NACK",
-      message: `Error al registrar el servicio: ${error.message}`,
+    res.status(500).json({
+      error: error.message || "Error al procesar transferencia SINPE Móvil."
     });
   }
 };
@@ -181,23 +174,16 @@ export const validatePhone = async (req: Request, res: Response) => {
     const sub = await findPhoneSubscription(phone);
 
     if (!sub) {
-      return res.status(404).json({
-        status: "NACK",
-        message: "Número no registrado",
-      });
+      return res.status(404).json({ error: "No registrado" });
     }
 
     return res.json({
-      status: "ACK",
-      message: "Número registrado",
       name: sub.sinpe_client_name,
       bank_code: sub.sinpe_bank_code,
-      phone: sub.sinpe_number,
+      phone: sub.sinpe_number
+
     });
   } catch {
-    return res.status(500).json({
-      status: "NACK",
-      message: "Error interno del servidor",
-    });
+    return res.status(500).json({ error: "Error interno del servidor" });
   }
 };

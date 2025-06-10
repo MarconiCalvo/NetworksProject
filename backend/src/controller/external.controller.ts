@@ -4,8 +4,8 @@ import {
   verifyHmac,
   logTransaction,
   createExternalCredit,
-  processTransfer
 } from "../service/transaction.service";
+import { processTransfer } from "../service/transaction.service";
 
 export const receiveTransfer = async (req: Request, res: Response) => {
   const transaction = req.body;
@@ -31,10 +31,7 @@ export const receiveTransfer = async (req: Request, res: Response) => {
     !hmac_md5 ||
     (!sender.account_number && !sender.phone)
   ) {
-    return res.status(400).json({
-      status: "NACK",
-      message: "Faltan campos requeridos o identificador de remitente."
-    });
+    return res.status(400).json({ error: "Faltan campos requeridos o identificador de remitente." });
   }
 
   // Log transacción entrante
@@ -43,10 +40,7 @@ export const receiveTransfer = async (req: Request, res: Response) => {
   // Verificar validez del HMAC
   const isValid = verifyHmac(transaction, hmac_md5);
   if (!isValid) {
-    return res.status(401).json({
-      status: "NACK",
-      message: "HMAC inválido. Transacción rechazada."
-    });
+    return res.status(401).json({ error: "HMAC inválido. Transacción rechazada." });
   }
 
   try {
@@ -65,17 +59,9 @@ export const receiveTransfer = async (req: Request, res: Response) => {
       await createExternalCredit(transaction);
     }
 
-    return res.status(200).json({
-      status: "ACK",
-      message: "Servicio SINPE Móvil registrado correctamente en ambas bases de datos",
-      transaction_id
-    });
-
+    return res.status(200).json({ success: true });
   } catch (error: any) {
     console.error("❌ Error procesando transferencia:", error.message);
-    return res.status(500).json({
-      status: "NACK",
-      message: `Error al registrar el servicio: ${error.message}`
-    });
+    return res.status(500).json({ error: error.message });
   }
 };
