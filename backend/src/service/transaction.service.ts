@@ -18,7 +18,7 @@ const httpsAgent = new https.Agent({
 
 interface Sender {
   account_number?: string;
-  phone?: string;
+  phone_number?: string;
   bank_code: string;
   name: string;
 }
@@ -60,23 +60,30 @@ const isSenderLocal = (senderBankCode: string): boolean =>
 export const verifyHmac = (data: TransferPayload, receivedHmac: string): boolean => {
   let expected: string;
 
-  if (data.sender.phone) {
-    expected = generateHmacForPhoneTransfer(
-      data.sender.phone,
-      data.timestamp,
-      data.transaction_id,
-      data.amount.value
-    );
-  } else if (data.sender.account_number) {
-    expected = generateHmacForAccountTransfer(
-      data.sender.account_number,
-      data.timestamp,
-      data.transaction_id,
-      data.amount.value
-    );
-  } else {
-    throw new Error("Sender no tiene un identificador válido para HMAC.");
-  }
+if (data.sender.phone_number) {
+  console.log("📞 Usando transferencia por teléfono");
+  console.log("Sender phone:", data.sender.phone_number);
+  expected = generateHmacForPhoneTransfer(
+    data.sender.phone_number,
+    data.timestamp,
+    data.transaction_id,
+    data.amount.value
+  );
+} else if (data.sender.account_number) {
+  console.log("🏦 Usando transferencia por cuenta");
+  console.log("Sender account_number:", data.sender.account_number);
+  expected = generateHmacForAccountTransfer(
+    data.sender.account_number,
+    data.timestamp,
+    data.transaction_id,
+    data.amount.value
+  );
+} else {
+  console.log("❌ No se encontró ni phone ni account_number en el sender");
+  console.log("📦 Sender recibido:", JSON.stringify(data.sender, null, 2));
+  console.log("📦 Payload completo:", JSON.stringify(data, null, 2));
+  throw new Error("Sender no tiene un identificador válido para HMAC.");
+}
 
   const valid = expected === receivedHmac;
   console.log(`🧾 HMAC válido: ${valid}`);
@@ -272,8 +279,11 @@ const sendToExternalBank = async (
 };
 
 export const routeTransfer = async (transaction: TransferPayload) => {
-  const senderBankCode = getBankCode(transaction.sender.account_number!);
-  const receiverBankCode = getBankCode(transaction.receiver.account_number);
+ const senderBankCode =
+  transaction.sender.account_number?.substring(5, 8) || transaction.sender.bank_code;
+
+  const receiverBankCode =
+  transaction.receiver.account_number?.substring(5, 8) || transaction.receiver.bank_code;
 
   console.log(
     `🏦 Enrutando transferencia: ${senderBankCode} → ${receiverBankCode} (Local: ${LOCAL_BANK_CODE})`

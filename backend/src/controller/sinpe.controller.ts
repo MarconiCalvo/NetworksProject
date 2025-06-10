@@ -42,9 +42,10 @@ export const handleSinpeTransfer = async (req: Request, res: Response) => {
     } = req.body;
 
     // Validar campos obligatorios
-    if (!sender?.phone || !receiver?.phone || !amount?.value || !hmac_md5) {
+    if (!sender?.phone_number || !receiver?.phone_number || !amount?.value || !hmac_md5) {
       return res.status(400).json({ error: "Faltan datos en la solicitud." });
     }
+
 
     // Validar HMAC
     const isValid = verifyHmac(
@@ -65,12 +66,13 @@ export const handleSinpeTransfer = async (req: Request, res: Response) => {
     }
 
     const transfer = await sendSinpeTransfer(
-      sender.phone,
-      receiver.phone,
+      sender.phone_number,
+      receiver.phone_number,
       amount.value,
       amount.currency,
       description
     );
+
 
     res.status(201).json({ message: "Transferencia realizada.", transfer });
   } catch (error: any) {
@@ -113,7 +115,7 @@ export const receiveSinpeMovilTransfer = async (req: Request, res: Response) => 
       receiver: {
         phone: receiver.phone_number,
         account_number: "temp", // Placeholder para cumplir el tipo
-        bank_code: "152",
+        bank_code: "119",
         name: receiver.name || "Usuario local"
       },
       amount,
@@ -178,6 +180,8 @@ export const validatePhone = async (req: Request, res: Response) => {
     return res.json({
       name: sub.sinpe_client_name,
       bank_code: sub.sinpe_bank_code,
+      phone: sub.sinpe_number
+
     });
   } catch {
     return res.status(500).json({ error: "Error interno del servidor" });

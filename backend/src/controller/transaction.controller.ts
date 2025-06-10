@@ -14,10 +14,14 @@ export const generateHmac = (req: Request, res: Response) => {
     }
 
     let hmac: string;
+console.log("Sinpe"+sender.phone_number)
+      console.log("Sinpe"+amount.value)
+    if (sender.phone_number) {
+      console.log("Sinpe")
+      
 
-    if (sender.phone) {
       hmac = generateHmacForPhoneTransfer(
-        sender.phone,
+        sender.phone_number,
         timestamp,
         transaction_id,
         amount.value

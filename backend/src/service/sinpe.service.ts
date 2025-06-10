@@ -1,6 +1,13 @@
 import { sinpe as prismaSinpe } from "../prisma/sinpeClient";
 import { bccr as prismaBccr } from "../prisma/bccrClient";
 import { Decimal } from "@prisma/client/runtime/library";
+import https from "https";
+import fetch from "node-fetch";
+
+// Configuración para aceptar certificados autofirmados en desarrollo
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false // Solo para desarrollo - acepta certificados autofirmados
+});
 
 export const findPhoneLinkForUser = async (username: string) => {
   // Buscar al usuario por nombre
@@ -72,7 +79,7 @@ export const sendSinpeTransfer = async (
 
   // 2. Verificar si es transferencia interna o externa
   const receiverBankCode = subscription.sinpe_bank_code;
-  const LOCAL_BANK_CODE = "152"; // Tu código de banco
+  const LOCAL_BANK_CODE = "119"; // Tu código de banco
   const isInternalTransfer = receiverBankCode === LOCAL_BANK_CODE;
 
   console.log(`🏦 Tipo de transferencia: ${isInternalTransfer ? 'Interna' : 'Externa'} (${LOCAL_BANK_CODE} → ${receiverBankCode})`);
@@ -93,8 +100,12 @@ export const sendSinpeTransfer = async (
       throw new Error("La cuenta origen vinculada al número remitente no existe.");
     }
 
-    if (fromAccount.balance.lt(new Decimal(amount))) {
-      throw new Error("Fondos insuficientes en la cuenta origen.");
+    // Convertir balance a número para comparación correcta
+    const currentBalance = Number(fromAccount.balance);
+    console.log(`💰 Balance actual: ${currentBalance} ${currency}, Monto a enviar: ${amount}`);
+
+    if (currentBalance < amount) {
+      throw new Error(`Fondos insuficientes en la cuenta origen. Balance: ${currentBalance} ${currency}, Requerido: ${amount} ${currency}`);
     }
 
     // Descontar fondos del emisor
@@ -204,6 +215,7 @@ export const sendSinpeTransfer = async (
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(finalPayload),
+        agent: httpsAgent, // Usar el agente HTTPS configurado
       });
 
       if (!response.ok) {

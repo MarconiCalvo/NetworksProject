@@ -1,260 +1,283 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Send, AlertCircle, CheckCircle } from "lucide-react"
-import { useNavigate } from "react-router-dom"
-import Layout from "./Layout"
-import { useAuth } from "../context/AuthContext"
+import React, { useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface Account {
-  id: number
-  number: string
-  currency: string
-  balance: string
+  id: string;
+  number: string;
+  currency: string;
+  balance: number;
 }
 
-const SinpeMovilTransferForm: React.FC = () => {
-  const { user } = useAuth()
-  const navigate = useNavigate()
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [formData, setFormData] = useState({
-    fromAccount: "",
-    toPhone: "",
-    amount: "",
-    currency: "CRC",
-    description: "",
-  })
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState("")
-  const [isError, setIsError] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const API_URL = import.meta.env.VITE_API_URL
-
-  const extractBankCode = (accountNumber: string): string => {
-    return accountNumber.slice(4, 8)
-  }
+const SinpeTransferForm: React.FC = () => {
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [fromAccount, setFromAccount] = useState("");
+  const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState("CRC");
+  const [comment, setComment] = useState("");
+  const [receiverName, setReceiverName] = useState<string | null>(null);
+  const API_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    if (!user) return
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     fetch(`${API_URL}/sinpe/user-link/${user.name}`)
       .then((res) => res.json())
       .then((data) => {
         if (!data.linked) {
-          alert("Ninguna de tus cuentas está vinculada a SINPE Móvil.")
+          alert("Ninguna de tus cuentas está vinculada a SINPE Móvil.");
         } else {
-          localStorage.setItem("senderInfo", data.phone)
+          localStorage.setItem("senderInfo", data.phone);
         }
       })
-      .catch(() => alert("Error al verificar si tu cuenta está vinculada a SINPE."))
-  }, [user, API_URL])
+      .catch(() => {
+        alert("Error al verificar si tu cuenta está vinculada a SINPE.");
+      });
+  }, [API_URL]);
 
   useEffect(() => {
-    if (!user) return
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const username = user?.name || "";
 
-    fetch(`${API_URL}/accounts?user=${encodeURIComponent(user.name)}`)
+    fetch(`${API_URL}/accounts?user=${encodeURIComponent(username)}`)
       .then((res) => res.json())
       .then((data: Account[]) => {
-        setAccounts(data)
+        setAccounts(data);
+        if (data.length > 0) {
+          setFromAccount(data[0].number);
+          setCurrency(data[0].currency);
+        }
       })
-      .catch(() => alert("Error al cargar cuentas"))
-  }, [user, API_URL])
+      .catch(() => {
+        alert("Error al cargar cuentas");
+      });
+  }, [API_URL]);
 
-  const selectedAccount = accounts.find((a) => a.number === formData.fromAccount)
-  const isValidAmount = Number(formData.amount) <= Number(selectedAccount?.balance || 0)
+  useEffect(() => {
+    if (fromAccount) {
+      const bankCode = fromAccount.slice(5, 8);
+      localStorage.setItem("senderAccount", bankCode);
+    }
+  }, [fromAccount]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setMessage("")
-    setIsError(false)
-    setIsSuccess(false)
-
-    try {
-      if (!selectedAccount) throw new Error("Cuenta de origen no válida")
-      if (!formData.toPhone.match(/^[0-9]{8}$/)) throw new Error("Número de teléfono no válido")
-      if (!isValidAmount) throw new Error("Monto excede saldo disponible")
-
-      const senderPhone = localStorage.getItem("senderInfo") || ""
-      const receiverRes = await fetch(`${API_URL}/validate/${formData.toPhone}`)
-      if (!receiverRes.ok) throw new Error("Número de teléfono no registrado en SINPE Móvil")
-      const receiverData = await receiverRes.json()
-
-      const timestamp = new Date().toISOString()
-      const transactionId = crypto.randomUUID()
-
-      const hmacPayload = {
-        sender: {
-          phone_number: senderPhone,
-        },
-        timestamp,
-        transaction_id: transactionId,
-        amount: {
-          value: Number(formData.amount),
-        },
+  useEffect(() => {
+    const buscarNombre = async () => {
+      if (!phone.match(/^[0-9]{8}$/)) {
+        setReceiverName(null);
+        return;
       }
 
-      const hmacRes = await fetch(`${API_URL}/transactions/hmac`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(hmacPayload),
-      })
-      if (!hmacRes.ok) throw new Error("Error generando HMAC")
-      const hmacData = await hmacRes.json()
+      try {
+        const res = await fetch(`${API_URL}/validate/${phone}`);
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        localStorage.setItem("receiverInfo", JSON.stringify(data));
+        console.log(data);
+        setReceiverName(data.name);
+      } catch {
+        setReceiverName(null);
+      }
+    };
 
-      const transactionPayload = {
+    buscarNombre();
+  }, [phone, API_URL]);
+
+  const selectedAccount = accounts.find((acc) => acc.number === fromAccount);
+  const amountNumber = Number(amount);
+  const isValidAmount = amountNumber > 0 && amountNumber <= (selectedAccount?.balance ?? 0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!phone.match(/^[0-9]{8}$/)) {
+      alert("Ingrese un número de teléfono válido.");
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      alert("El monto debe ser mayor a 0.");
+      return;
+    }
+
+    if (!isValidAmount) {
+      alert("Monto insuficiente o inválido.");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const sender_phone = localStorage.getItem("senderInfo") || "";
+      const bank_Sender = localStorage.getItem("senderAccount") || "119";
+      const receiverInfo = JSON.parse(localStorage.getItem("receiverInfo") || "{}");
+      const timestamp = new Date().toISOString();
+      const transactionId = uuidv4();
+
+      const payload = {
         version: "1.0",
         timestamp,
         transaction_id: transactionId,
         sender: {
-          phone_number: senderPhone,
-          bank_code: extractBankCode(selectedAccount.number),
-          name: user?.name || "",
+          phone_number: sender_phone,
+          bank_code: bank_Sender,
+          name: user.name || "Desconocido",
         },
         receiver: {
-          phone_number: formData.toPhone,
-          bank_code: receiverData.bank_code || "0000",
-          name: receiverData.name || "",
+          phone_number: phone,
+          bank_code: receiverInfo.bank_code || "000",
+          name: receiverInfo.name || "",
         },
         amount: {
-          value: Number(formData.amount),
-          currency: formData.currency,
+          value: Number(amount),
+          currency,
         },
-        description: `Transferencia por ${formData.amount} ${formData.currency}`,
-        hmac_md5: hmacData.hmac_md5,
-      }
+        description: comment || "Transferencia SINPE desde app demo",
+      };
 
-      console.log("JSON enviado a /transactions:", transactionPayload)
-
-      const txRes = await fetch(`${API_URL}/transactions`, {
+      const hmacRes = await fetch(`${API_URL}/transactions/hmac`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transactionPayload),
-      })
-      if (!txRes.ok) throw new Error("Error al procesar la transferencia")
+        body: JSON.stringify(payload),
+      });
 
-      setIsSuccess(true)
-      setMessage(`Transferencia SINPE Móvil exitosa a ${formData.toPhone}`)
-      setFormData({
-        fromAccount: "",
-        toPhone: "",
-        amount: "",
-        currency: "CRC",
-        description: "",
-      })
-    } catch (err: any) {
-      setIsError(true)
-      setMessage(err.message || "Error desconocido")
-    } finally {
-      setLoading(false)
+      const { hmac_md5 } = await hmacRes.json();
+
+      const finalPayload = { ...payload, hmac_md5 };
+
+      console.log(finalPayload)
+
+      const res = await fetch(`${API_URL}/sinpe-movil`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(finalPayload),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error("❌ Error del backend:", res.status, errText);
+        alert("Error al enviar la transferencia: " + errText);
+        return;
+      }
+
+      const result = await res.json();
+      console.log("✅ Transferencia realizada:", result);
+      alert("Transferencia completada con éxito.");
+
+      // Reset form
+      setPhone("");
+      setAmount("");
+      setComment("");
+    } catch (err) {
+      console.error("❌ Error en el envío de transferencia SINPE:", err);
+      alert("No se pudo completar la transferencia.");
     }
-  }
+  };
 
   return (
-    <Layout>
-      <div className="max-w-2xl mx-auto">
-        <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow space-y-6">
-          <h2 className="text-xl font-semibold text-blue-800 text-center">Transferencia SINPE Móvil</h2>
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 max-w-xl mx-auto bg-white p-8 rounded-xl shadow-md"
+    >
+      <h2 className="text-2xl font-bold text-blue-800 text-center">
+        Transferencia SINPE
+      </h2>
 
-          {message && (
-            <div
-              className={`p-4 rounded-lg flex items-center space-x-3 ${
-                isError
-                  ? "bg-red-50 text-red-700 border border-red-200"
-                  : "bg-green-50 text-green-700 border border-green-200"
-              }`}
-            >
-              {isError ? <AlertCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
-              <span className="font-medium">{message}</span>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Cuenta origen</label>
-            <select
-              required
-              value={formData.fromAccount}
-              onChange={(e) => setFormData({ ...formData, fromAccount: e.target.value })}
-              className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
-            >
-              <option value="">Seleccione una cuenta</option>
-              {accounts.map((acc) => (
-                <option key={acc.id} value={acc.number}>
-                  {acc.number} ({acc.currency})
-                </option>
-              ))}
-            </select>
-            {selectedAccount && (
-              <p className="text-sm text-gray-500 mt-1">
-                Saldo disponible:{" "}
-                {Number(selectedAccount.balance).toLocaleString("es-CR", {
-                  style: "currency",
-                  currency: selectedAccount.currency,
-                })}
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Número de teléfono</label>
-            <input
-              type="tel"
-              required
-              value={formData.toPhone}
-              onChange={(e) => setFormData({ ...formData, toPhone: e.target.value })}
-              className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
-              placeholder="Ej: 88888888"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Monto</label>
-            <input
-              type="number"
-              required
-              min="0.01"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
-              placeholder="₡0.00"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Moneda</label>
-            <select
-              value={formData.currency}
-              onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
-            >
-              <option value="CRC">Colones (CRC)</option>
-              <option value="USD">Dólares (USD)</option>
-              <option value="EUR">Euros (EUR)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Comentario (opcional)</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm resize-none"
-              rows={3}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition disabled:opacity-50 flex justify-center items-center gap-2"
-          >
-            <Send className="w-5 h-5" />
-            <span>{loading ? "Procesando..." : "Transferir"}</span>
-          </button>
-        </form>
+      <div>
+        <label className="block text-sm font-medium mb-1">Cuenta origen</label>
+        <select
+          value={fromAccount}
+          onChange={(e) => {
+            const acc = accounts.find((a) => a.number === e.target.value);
+            setFromAccount(e.target.value);
+            if (acc) setCurrency(acc.currency);
+          }}
+          className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
+          required
+        >
+          {accounts.map((acc) => (
+            <option key={acc.id} value={acc.number}>
+              {acc.number} ({acc.currency})
+            </option>
+          ))}
+        </select>
+        {selectedAccount && (
+          <p className="text-sm text-gray-500 mt-1">
+            Saldo disponible:{" "}
+            {selectedAccount.balance.toLocaleString("es-CR", {
+              style: "currency",
+              currency: selectedAccount.currency,
+            })}
+          </p>
+        )}
       </div>
-    </Layout>
-  )
-}
 
-export default SinpeMovilTransferForm
+      <div>
+        <label className="block text-sm font-medium mb-1">Número de teléfono</label>
+        <input
+          type="tel"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="Ej: 88888888"
+          className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm"
+          required
+        />
+        {receiverName && (
+          <p className="text-sm text-green-600 mt-1">
+            Destinatario: {receiverName}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">Monto</label>
+        <div className="flex gap-2">
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="rounded-md px-3 py-2 border-gray-300 shadow-sm"
+          >
+            <option value="CRC">₡</option>
+            <option value="USD">$</option>
+            <option value="EUR">€</option>
+          </select>
+          <input
+            type="number"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="Monto"
+            className="flex-1 rounded-md px-4 py-3 border-gray-300 shadow-sm"
+            required
+            min={0.01}
+            step="0.01"
+          />
+        </div>
+        {!isValidAmount && (
+          <p className="text-sm text-red-600 mt-1">
+            El monto excede el saldo disponible.
+          </p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-1">
+          Comentario (opcional)
+        </label>
+        <textarea
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          placeholder="Motivo de la transferencia"
+          className="w-full rounded-md px-4 py-3 border-gray-300 shadow-sm resize-none"
+          rows={3}
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-md hover:bg-blue-700 transition"
+      >
+        Continuar
+      </button>
+    </form>
+  );
+};
+
+export default SinpeTransferForm;
