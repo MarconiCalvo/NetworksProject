@@ -1,10 +1,10 @@
-// src/services/user.service.ts
 import bcrypt from "bcryptjs";
-import { prisma } from "../utils/prisma"; // asegúrate de tener este módulo creado
+import { prisma } from "../utils/prisma"; 
 
 export const createUser = async (
   name: string,
   email: string,
+  cedula: string,
   phone: string,
   password: string
 ) => {
@@ -28,6 +28,7 @@ export const createUser = async (
     data: {
       name,
       email,
+      cedula,
       phone,
       password_hash,
     },

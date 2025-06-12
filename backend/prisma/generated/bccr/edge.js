@@ -123,7 +123,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Marconi\\Desktop\\UNA\\3 Nivel\\Primer Semestre\\Redes\\Test\\Redes-Project\\server\\prisma\\generated\\bccr",
+      "value": "C:\\Users\\Marconi\\Desktop\\UNA\\3 Nivel\\Primer Semestre\\Redes\\NetworksProject\\backend\\prisma\\generated\\bccr",
       "fromEnvVar": null
     },
     "config": {
@@ -137,7 +137,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Marconi\\Desktop\\UNA\\3 Nivel\\Primer Semestre\\Redes\\Test\\Redes-Project\\server\\prisma\\bccr\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\Marconi\\Desktop\\UNA\\3 Nivel\\Primer Semestre\\Redes\\NetworksProject\\backend\\prisma\\bccr\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

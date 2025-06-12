@@ -11,7 +11,6 @@ router.post("/transactions/hmac", (req: Request, res: Response, next: NextFuncti
 });
 
 router.post("/transactions", (req: Request, res: Response, next: NextFunction) => {
-  // Ensure errors are passed to Express error handler
   Promise.resolve(receiveTransaction(req, res)).catch(next);
 });
 

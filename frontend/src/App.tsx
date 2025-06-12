@@ -11,6 +11,7 @@ import Accounts from "./components/Accounts"
 import SinpeForm from "./components/SinpeForm"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import PhoneLinkForm from "./components/PhoneLinkForm"
+import PullFundsForm from "./components/PullFundsForm"
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -78,6 +79,14 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <PhoneLinkForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pullFundsForm"
+              element={
+                <ProtectedRoute>
+                  <PullFundsForm />
                 </ProtectedRoute>
               }
             />

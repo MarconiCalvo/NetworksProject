@@ -8,7 +8,6 @@ export const createAccount = async (
 ) => {
   const number = await generateIbanNumber();
 
-  // Paso 1: crear la cuenta
   const account = await sinpe.accounts.create({
     data: {
       number,
@@ -17,7 +16,6 @@ export const createAccount = async (
     },
   });
 
-  // Paso 2: vincular con el usuario
   await sinpe.user_accounts.create({
     data: {
       user_id,
@@ -36,7 +34,6 @@ export const getAccounts = async (userName: string) => {
       },
     });
 
-    // Convertir balance de Decimal a número
     return accounts.map(account => ({
       ...account,
       balance: Number(account.balance)
@@ -56,7 +53,6 @@ export const getAccounts = async (userName: string) => {
     where: { id: { in: accountIds } },
   });
 
-  // Convertir balance de Decimal a número
   return accounts.map(account => ({
     ...account,
     balance: Number(account.balance)
@@ -80,7 +76,6 @@ export const getAllAccounts = async () => {
     },
   });
 
-  // Convertir balance de Decimal a número
   return accounts.map(account => ({
     ...account,
     balance: Number(account.balance)
@@ -122,7 +117,7 @@ export const getAccountWithTransfers = async (accountNumber: string) => {
   const debits = account.transfers_transfers_from_account_idToaccounts.map(
     (t: { amount: any; currency: string; created_at: Date | null }) => ({
       type: "debit",
-      amount: Number(t.amount), // Convertir Decimal a número
+      amount: Number(t.amount), 
       currency: t.currency,
       date: t.created_at,
     })
@@ -131,7 +126,7 @@ export const getAccountWithTransfers = async (accountNumber: string) => {
   const credits = account.transfers_transfers_to_account_idToaccounts.map(
     (t: { amount: any; currency: string; created_at: Date | null }) => ({
       type: "credit",
-      amount: Number(t.amount), // Convertir Decimal a número
+      amount: Number(t.amount), 
       currency: t.currency,
       date: t.created_at,
     })

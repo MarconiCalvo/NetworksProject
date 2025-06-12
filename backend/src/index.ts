@@ -17,7 +17,6 @@ const app = express();
 const HTTP_PORT = 3001;
 const HTTPS_PORT = 3443;
 
-// Configuración de CORS para permitir requests desde el frontend (HTTP y HTTPS)
 app.use(cors({
   origin: [
     "http://localhost:5173",
@@ -31,10 +30,8 @@ app.use(cors({
   optionsSuccessStatus: 200
 }));
 
-// Asegurarse de que el middleware de CORS se aplique antes que bodyParser
 app.use(bodyParser.json());
 
-// Rutas existentes sin cambios
 app.use("/api", userRoutes);
 app.use("/api", authRoutes);
 app.use("/api", accountRoutes);
@@ -44,7 +41,6 @@ app.use("/api", messageRoutes);
 app.use("/api", phoneLinkRoutes);
 app.use("/api", sinpeRoutes);
 
-// Endpoint de salud para verificar conectividad entre bancos
 app.get("/api/health", (req, res) => {
   res.json({
     status: "healthy",
@@ -54,12 +50,10 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Iniciar servidor HTTP (mantener funcionalidad existente)
 app.listen(HTTP_PORT, "0.0.0.0", () => {
   console.log(`🌐 Servidor HTTP escuchando en http://0.0.0.0:${HTTP_PORT}`);
 });
 
-// Configurar y iniciar servidor HTTPS
 try {
   const sslOptions = {
     key: fs.readFileSync(path.join(__dirname, '../certs/key.pem')),

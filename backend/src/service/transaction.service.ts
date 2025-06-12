@@ -11,7 +11,6 @@ import {
 
 const LOCAL_BANK_CODE = "119";
 
-// Configuración para aceptar certificados autofirmados en desarrollo
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
 });
@@ -314,6 +313,5 @@ export const routeTransfer = async (transaction: TransferPayload) => {
   throw new Error("Transferencia de tránsito no permitida en este banco.");
 };
 
-// Compatibilidad
 export const processTransfer = processInternalTransfer;
 export const createExternalCredit = processIncomingCredit;

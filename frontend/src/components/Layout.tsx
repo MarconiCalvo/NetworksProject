@@ -22,6 +22,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     { name: "Mis Cuentas", href: "/accounts", icon: CreditCard },
     { name: "SinpeMovil", href: "/sinpeForm", icon: Send },
     { name: "PhoneLinkForm", href: "/phone-link", icon: PhoneCall },
+    { name: "PullFunds", href: "/pullFundsForm", icon: PhoneCall }
   ]
 
   const handleLogout = () => {

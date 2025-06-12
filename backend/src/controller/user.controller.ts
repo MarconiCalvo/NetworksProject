@@ -5,7 +5,7 @@ export const createUser = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { name, email, phone, password } = req.body;
+  const { name, email, cedula, phone, password } = req.body;
 
   console.log("✅ Recibido: ", { name, email });
 
@@ -15,7 +15,7 @@ export const createUser = async (
   }
 
   try {
-    const newUser = await userService.createUser(name, email, phone, password);
+    const newUser = await userService.createUser(name, email, cedula,phone, password);
     console.log("✅ Usuario creado:", newUser);
     res.status(201).json({ message: "Usuario creado", user: newUser });
   } catch (error: any) {
